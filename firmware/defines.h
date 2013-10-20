@@ -6,10 +6,25 @@
  * For details see the UNLICENSE file at the root of the source tree.
  */
 
-#ifndef _DEFINES_H
-#define _DEFINES_H
+#ifndef _DEFINES_H_
+#define _DEFINES_H_
+
+#define MM_VERSION	"201310"
 
 #define DEBUG		1
+#ifdef DEBUG
+void hexdump(const uint8_t *p, unsigned int len);
 
-#define MM_VERSION	"MM201310\n"
-#endif	/* _DEFINES_H */
+#include "serial.h"
+char printf_buf32[32];
+#define debug32(...)	do {				\
+		m_sprintf(printf_buf32, __VA_ARGS__);	\
+		serial_puts(printf_buf32);		\
+	} while(0)
+#else
+#define debug32(...)
+#define hexdump(x, y)
+#endif
+
+
+#endif	/* _DEFINES_H_ */

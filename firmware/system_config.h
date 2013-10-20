@@ -6,21 +6,38 @@
  * For details see the UNLICENSE file at the root of the source tree.
  */
 
-#ifndef __SYSTEM_CONFIG_H_
-#define __SYSTEM_CONFIG_H_
+#ifndef _SYSTEM_CONFIG_H_
+#define _SYSTEM_CONFIG_H_
 
 #define CPU_FREQUENCY		(50 * 1000 * 1000) /* 50Mhz */
 #define UART_BAUD_RATE          (115200)
 
+/* Interrupt
+ * Define at last few lines of verilog/superkdf9/soc/superkdf9_simple.v
+ */
+#define IRQ_GPIO		(0x00000001) /* 0 */
+#define IRQ_SPI			(0x00000002) /* 1 */
+
+#define IRQ_UART		(0x00000008) /* 3 */
+#define IRQ_UARTDEBUG		(0x00000010) /* 4 */
+
+
+/* Registers */
 #define SPI_BASE		(0x80000000)
 #define UART0_BASE		(0x80000100)
 #define GPIO_BASE		(0x80000200)
 #define UART1_BASE		(0x80000300)
 #define SHA256_BASE		(0x80000400)
-#define PHYI_BASE		(0x80000500)
-#define PHYO_BASE		(0x80000600)
-#define TWIRE_BASE		(0x80000700)
+#define ALINK_BASE		(0x80000500)
+#define TWIPWM_BASE		(0x80000600)
 
+
+/* UART */
+#define LM32_UART_IER_RBRI	(1 << 0)
+#define LM32_UART_IER_THRI	(1 << 1)
+
+#define LM32_UART_STAT_RX_EVT	(0x4)
+#define LM32_UART_STAT_TX_EVT	(0x2)
 
 /* Line status register */
 #define LM32_UART_LSR_DR	(1 << 0)
@@ -35,7 +52,6 @@
 /* Modem control register */
 #define LM32_UART_MCR_DTR	(1 << 0)
 #define LM32_UART_MCR_RTS	(1 << 1)
-
 
 struct lm32_uart {
 	volatile unsigned char rxtx;
@@ -63,8 +79,44 @@ struct lm32_uart {
 
 struct lm32_sha256 {
 	volatile unsigned int cmd;
-	volatile unsigned int in;
-	volatile unsigned int out;
+	volatile unsigned int din;
+	volatile unsigned int hash;
+	volatile unsigned int hi;
+	volatile unsigned int pre; /* Please read the A3255 datasheet */
 };
 
-#endif /* __SYSTEM_CONFIG_H_ */
+
+/* ALINK */
+#define LM32_ALINK_STATE_TXFULL	(1 << 0)
+#define LM32_ALINK_STATE_FLUSH	(1 << 1)
+#define LM32_ALINK_STATE_TXCOUNT	(0x000000F0)
+#define LM32_ALINK_STATE_RXEMPTY	(1 << 16)
+#define LM32_ALINK_STATE_RXCOUNT (0x00F00000)
+
+struct lm32_alink {
+	volatile unsigned int tx;
+	volatile unsigned int state;	/* Read only */
+	volatile unsigned int en;
+	volatile unsigned int busy;	/* Read only */
+	volatile unsigned int rx;
+};
+
+/* TWI PWM */
+#define LM32_TWIPWM_CR_ENABLE	(1 << 0)
+#define LM32_TWIPWM_CR_TSTART	(1 << 1)
+#define LM32_TWIPWM_CR_TDONE	(1 << 2)
+#define LM32_TWIPWM_CR_CMD_START	(0 << 4)
+#define LM32_TWIPWM_CR_CMD_WD		(1 << 4)
+#define LM32_TWIPWM_CR_CMD_RDACK	(2 << 4)
+#define LM32_TWIPWM_CR_CMD_STOP		(3 << 4)
+#define LM32_TWIPWM_CR_CMD_RCNOACKT	(4 << 4)
+
+struct lm32_twipwm {
+	volatile unsigned int cr; /* TWI ctrl register */
+	volatile unsigned int wd; /* TWI write byte */
+	volatile unsigned int rd; /* TWI read byte */
+	volatile unsigned int pwm; /* PWM Counter register */
+};
+
+
+#endif /* _SYSTEM_CONFIG_H_ */

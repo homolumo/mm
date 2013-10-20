@@ -10,15 +10,12 @@
 -include config.mk
 # ----- Customer ----------------------------------------------------------
 INCLUDES   = -I. -Isdk -Iminilibc
-LDFLAGS    += -Wl,--gc-sections -Wl,-T,linker.ld -nostartfiles -nodefaultlibs -nostdlib -Wl,-Map=$(PRJ_NAME).map
+LDFLAGS    += -nostartfiles -nodefaultlibs -nostdlib -Wl,--gc-sections -Wl,-T,linker.ld -Wl,-Map=$(PRJ_NAME).map
 LDLIBS     += -Bminilibc -lminilibc -lgcc
 
-CSRCS      = main.c serial.c
-SDK_SRCS   = \
-	sdk/crt0ram.S \
-	sdk/utils.S \
-	sdk/intr.c
-OBJS       := $(addsuffix .o,$(basename $(CSRCS) $(SDK_SRCS)))
+SSRCS      = sdk/crt0ram.S sdk/intr.c
+CSRCS      = main.c serial.c sha256.c alink.c twipwm.c miner.c
+OBJS       := $(addsuffix .o,$(basename $(CSRCS) $(SSRCS)))
 
 BATCHFILE	:= $(shell mktemp)
 HARDWARE_NAME	= mm
@@ -77,7 +74,7 @@ load: $(HARDWARE_NAME).bit
 $(HARDWARE_NAME).mcs: $(HARDWARE_NAME).bit
 	cp $^ ../synth
 	make -C ../synth $@
-	cp ../synth/$@ .
+	cp ../synth/$@ $@
 
 $(HARDWARE_NAME).bit: $(PRJ_NAME).elf ../synth/$(HARDWARE_NAME).bit ../synth/$(HARDWARE_NAME)_bd.bmm
 	$(xil_env) && data2mem -bm ../synth/$(HARDWARE_NAME)_bd.bmm -bd $(PRJ_NAME).elf -bt ../synth/$(HARDWARE_NAME).bit -o b $@
@@ -91,7 +88,6 @@ $(HARDWARE_NAME).bit: $(PRJ_NAME).elf ../synth/$(HARDWARE_NAME).bit ../synth/$(H
 # Clean rules
 clean:
 	rm -f $(OBJS) $(OBJS:.o=.d) $(TARGET) $(PRJ_NAME).objdump $(PRJ_NAME).hexdump
-	make -C jsmn clean
 	make -C minilibc clean
 
 distclean: clean

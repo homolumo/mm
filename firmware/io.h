@@ -6,8 +6,8 @@
  * For details see the UNLICENSE file at the root of the source tree.
  */
 
-#ifndef _IO_H
-#define _IO_H
+#ifndef _IO_H_
+#define _IO_H_
 
 #ifndef bswap_16
 #define	bswap_16(value)  \
@@ -34,4 +34,6 @@
 #define likely(x)	(x)
 #define unlikely(x)	(x)
 
-#endif /* _IO_H */
+#define ARRAY_SIZE(x)	(sizeof(x) / sizeof((x)[0]))
+
+#endif /* _IO_H_ */

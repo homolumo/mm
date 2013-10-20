@@ -10,25 +10,29 @@
 #define __MINER_H__
 
 #include <stdbool.h>
-#include "sdk.h"
-
-char *blank_merkel = "0000000000000000000000000000000000000000000000000000000000000000";
-char *workpadding = "000000800000000000000000000000000000000000000000000000000000000000000000000000000000000080020000";
+#include <stdint.h>
 
 struct work {
-	unsigned char	data[128];
-	unsigned char	midstate[32];
-	unsigned char	target[32];
-	unsigned char	hash[32];
+	uint32_t nonce2;
+	uint8_t	task_id[8];	/* Nonce2 + job_id etc */
+	uint8_t	step[4];
+	uint8_t	timeout[4];
+	uint8_t	clock[8];
 
+	uint8_t a2[4];
+	uint8_t e0[4];
+	uint8_t e1[4];
+	uint8_t e2[4];
+	uint8_t a0[4];
+	uint8_t a1[4];
+	uint8_t data[44]; 	/* midstate[32] + data[12] */
+};
 
-	bool		stratum;
-	char 		*job_id;
-	uint32_t	nonce2;
-	size_t		nonce2_len;
-	char		*ntime;
-	double		sdiff;
-	char		*nonce1;
+struct result {
+	uint8_t miner_id[4];      /* The miner ID */
+	uint8_t	task_id[8];	 /* Same with work task_id */
+	uint8_t	timeout[4];
+	uint8_t nonce[4];
 };
 
 struct mm_work {
@@ -36,10 +40,16 @@ struct mm_work {
 
 	size_t coinbase_len;
 	uint8_t *coinbase;
-	int cb_nonce2_offset;
-	int cb_nonce2_size; /* only 4 is support atm. */
-	int nbranches;
-	uint8_t *merkels[10];
+
+	char *nonce1;
+	uint32_t nonce2;
+	int nonce2_offset;
+	int nonce2_size; /* only 4 is support atm. */
+
+	int merkle_offset;
+	int nmerkles;
+	uint8_t *merkles[10];
+
 	uint8_t difficulty; /* number of leading zeros bits required
 			     * (for a valid share) */
 	bool rollntime; /* whether rollntime is accepted */
@@ -47,5 +57,8 @@ struct mm_work {
 
 	uint8_t *header;
 };
+
+void miner_init_work(struct mm_work *mw, struct work *work);
+void miner_gen_work(struct mm_work *mw, struct work *work);
 
 #endif /* __MINER_H__ */

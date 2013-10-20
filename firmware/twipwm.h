@@ -6,17 +6,13 @@
  * For details see the UNLICENSE file at the root of the source tree.
  */
 
-#include "intr.h"
-#include "system_config.h"
+#ifndef _TWI_H_
+#define _TWI_H_
 
-#include "serial.h"
+void twi_start(void);
+void twi_write(uint8_t value);
+uint8_t twi_read(void);
+void twi_stop(void);
+void write_pwm(uint8_t value);
 
-void isr(void)
-{
-	unsigned int irqs;
-
-	irqs = irq_pending() & irq_getmask();
-
-	if (irqs & IRQ_UART)
-		uart_isr();
-}
+#endif	/* _TWI_H_ */
