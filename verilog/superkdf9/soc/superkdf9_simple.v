@@ -348,12 +348,20 @@ endmodule
 
 `include "../components/twi/twi_define.v"
 `include "../components/twi/twi.v"
+`include "../components/twi/shift.v"
 `include "../components/twi/twi_core.v"
 //module superkdf9_simple ( 
 module mm ( 
-  ex_clk_i 
+  ex_clk_i
+, ex_clk_o
 , uartSIN
 , uartSOUT
+, uartSIN_PIN
+, uartSOUT_PIN
+, INT
+, uartSIN_led
+, uartSOUT_led
+
 , uartRXRDY_N
 , uartTXRDY_N
 , uartRESET_N
@@ -374,12 +382,22 @@ module mm (
 , PWM
 , TWI_SCL
 , TWI_SDA
+
+, SFT_SHCP
+, SFT_DS  
+, SFT_STCP
+, SFT_MR_N
+, SFT_OE_N
+
+, FAN_IN0
+, FAN_IN1
 );
 output POWER_ON ;
 output PWM ;
 input	ex_clk_i;
+output  ex_clk_o ;
 wire clk_i , reset_n ;
-clkgen clk (.clkin(ex_clk_i), .clkout(clk_i), .locked(reset_n));
+clkgen clk (.clkin(ex_clk_i), .clkout(clk_i), .clk25m(ex_clk_o), .locked(reset_n));
 assign POWER_ON = 1 ;
 
 wire WATCH_DOG ;
@@ -457,10 +475,21 @@ wire uartUART_en;
 wire uartINTR;
 input  uartSIN;
 output  uartSOUT;
+input   uartSIN_PIN;
+output  uartSOUT_PIN;
+output  INT;
+
 output  uartRESET_N;
 output  hubRESET_N;
 output  uartRXRDY_N;
 output  uartTXRDY_N;
+
+output  uartSIN_led;
+output  uartSOUT_led;
+
+assign  uartSIN_led = ~uartSIN ;
+assign  uartSOUT_led= ~uartSOUT;
+
 
 wire [31:0] spiSPI_DAT_O;
 wire   spiSPI_ACK_O;
@@ -520,10 +549,20 @@ wire        twiTWI_RTY_O;
 wire        twiTWI_en;
 wire        TWI_SCL_O ;
 wire        TWI_SDA_OEN ;
+
+output      SFT_SHCP ;
+output      SFT_DS   ;
+output      SFT_STCP ;
+output      SFT_MR_N ;
+output      SFT_OE_N ;
+
+input       FAN_IN0 ;
+input       FAN_IN1 ;
 // Enable the FT232 and HUB
 assign uartRESET_N = 1'b1;
 assign hubRESET_N  = 1'b1;
-
+wire TIME0_INT ;
+wire TIME1_INT ;
 reg [2:0] counter;
 wire sys_reset = !counter[2] || WATCH_DOG ;
 always @(posedge clk_i or negedge reset_n)
@@ -707,24 +746,14 @@ lm32_top
 // VIO/ILA and ICON {{{
 wire [35:0] icon_ctrl_0, icon_ctrl_1;
 wire [255:0] trig0 = {
-                   4'ha                 ,//[82:79]
-/*input         */ sys_reset            ,//78
-/*input         */ shaSHA_en        ,//77
-/*input         */ SHAREDBUS_STB_I      ,//76
-/*input         */ SHAREDBUS_WE_I       ,//75
-/*input  [5:0]  */ SHAREDBUS_ADR_I[5:0] ,//[74:69]
-/*input  [31:0] */ SHAREDBUS_DAT_I[31:0],//[68:37]
-/*output        */ shaSHA_ACK_O     ,//36
-/*output [31:0] */ shaSHA_DAT_O     ,//[35:4]
-/*output [   0] */ TX_P[0]              ,//3
-/*output [   0] */ TX_N[0]              ,//2
-/*input  [   0] */ RX_P[0]              ,//1
-/*input  [   0] */ RX_N[0]               //0
-
+        8'ha                 ,//[15:8]
+	irom_addr_rd[29:0]   ,
+	irom_q_rd[31:0]      ,
+	superkdf9interrupt_n[7:0]
 } ;
-//icon icon_test(.CONTROL0(icon_ctrl_0));
-//ila ila_test(.CONTROL(icon_ctrl_0), .CLK(clk_i), .TRIG0(trig0)
-//);
+icon icon_test(.CONTROL0(icon_ctrl_0));
+ila ila_test(.CONTROL(icon_ctrl_0), .CLK(clk_i), .TRIG0(trig0)
+);
 //vio vio_test(.CONTROL(icon_ctrl_1), .ASYNC_OUT(intr_i));
 // }}}
 
@@ -783,6 +812,9 @@ assign uartUART_SEL_I = ((
 	SHAREDBUS_ADR_I[1:0] == 2'b01) ? SHAREDBUS_SEL_I[2] : ((
 	SHAREDBUS_ADR_I[1:0] == 2'b10) ? SHAREDBUS_SEL_I[1] : SHAREDBUS_SEL_I[0])));
 assign uartUART_en = (SHAREDBUS_ADR_I[31:4] == 28'b1000000000000000000000010000);
+wire uartSOUT_w ;
+assign uartSOUT = uartSOUT_w ;
+assign uartSOUT_PIN = uartSOUT_w ;
 uart_core 
 #(
 .UART_WB_DAT_WIDTH(8),
@@ -812,8 +844,8 @@ uart_core
 .UART_LOCK_I(SHAREDBUS_LOCK_I),
 .UART_CYC_I(SHAREDBUS_CYC_I & uartUART_en),
 .UART_STB_I(SHAREDBUS_STB_I & uartUART_en),
-.SIN(uartSIN),
-.SOUT(uartSOUT),
+.SIN(uartSIN&uartSIN_PIN),
+.SOUT(uartSOUT_w),
 .RXRDY_N(uartRXRDY_N),
 .TXRDY_N(uartTXRDY_N),
 .INTR(uartINTR),
@@ -1000,10 +1032,10 @@ alink alink(
 assign twiTWI_en = (SHAREDBUS_ADR_I[31:6] == 26'b10000000000000000000011000);
 assign TWI_SCL = TWI_SCL_O == 1'b0 ? 1'b0 : 1'bz ;//p85
 assign TWI_SDA = TWI_SDA_OEN == 1'b0 ? 1'b0 : 1'bz ;//p8
-twi(
+twi u_twi(
 // system clock and reset
-/*input         */ .CLK_I       (clk_i) ,
-/*input         */ .RST_I       (sys_reset) ,
+/*input         */ .CLK_I       (clk_i                       ) ,
+/*input         */ .RST_I       (sys_reset                   ) ,
 
 // wishbone interface signals
 /*input         */ .TWI_CYC_I   (SHAREDBUS_CYC_I & twiTWI_en ) ,//NC
@@ -1024,7 +1056,18 @@ twi(
 /*input         */ .TWI_SDA_I   (TWI_SDA                     ) ,
 /*output        */ .TWI_SDA_OEN (TWI_SDA_OEN                 ) ,
 /*output        */ .PWM         (PWM                         ) , 
-/*output        */ .WATCH_DOG   (WATCH_DOG                   ) 
+/*output        */ .WATCH_DOG   (WATCH_DOG                   ) ,
+
+/*output        */ .SFT_SHCP    (SFT_SHCP                    ) ,
+/*output        */ .SFT_DS      (SFT_DS                      ) ,
+/*output        */ .SFT_STCP    (SFT_STCP                    ) ,
+/*output        */ .SFT_MR_N    (SFT_MR_N                    ) ,
+/*output        */ .SFT_OE_N    (SFT_OE_N                    ) , 
+
+/*input         */ .FAN_IN0     (FAN_IN0                     ) ,
+/*input         */ .FAN_IN1     (FAN_IN1                     ) ,
+/*output        */ .TIME0_INT   (TIME0_INT                   ) , 
+/*output        */ .TIME1_INT   (TIME1_INT                   ) 
 ) ;
 
 assign superkdf9interrupt_n[3] = !uartINTR ;
@@ -1032,8 +1075,8 @@ assign superkdf9interrupt_n[1] = !spiSPI_INT_O ;
 assign superkdf9interrupt_n[0] = !gpioIRQ_O ;
 assign superkdf9interrupt_n[4] = !uart_debugINTR ;
 assign superkdf9interrupt_n[2] = 1;
-assign superkdf9interrupt_n[5] = 1;
-assign superkdf9interrupt_n[6] = 1;
+assign superkdf9interrupt_n[5] = !TIME0_INT;
+assign superkdf9interrupt_n[6] = !TIME1_INT;
 assign superkdf9interrupt_n[7] = 1;
 assign superkdf9interrupt_n[8] = 1;
 assign superkdf9interrupt_n[9] = 1;
@@ -1059,4 +1102,5 @@ assign superkdf9interrupt_n[28] = 1;
 assign superkdf9interrupt_n[29] = 1;
 assign superkdf9interrupt_n[30] = 1;
 assign superkdf9interrupt_n[31] = 1;
+assign INT = ~(&superkdf9interrupt_n) ;
 endmodule

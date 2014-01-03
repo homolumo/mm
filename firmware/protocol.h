@@ -10,17 +10,15 @@
 #define _PROTOCOL_H_
 
 /* Avalon2 protocol package type */
+#define MM_VERSION_LEN	15
 #define AVA2_H1	'A'
 #define AVA2_H2	'V'
 
-#define AVA2_T1	'O'
-#define AVA2_T2	'N'
-
-#define AVA2_P_COINBASE_SIZE	(2 * 1024)
+#define AVA2_P_COINBASE_SIZE	(6 * 1024)
 #define AVA2_P_MERKLES_COUNT	20
 
-#define AVA2_P_COUNT	41
-#define AVA2_P_DATA_LEN		(41 - 9)
+#define AVA2_P_COUNT	39
+#define AVA2_P_DATA_LEN		(AVA2_P_COUNT - 7)
 
 #define AVA2_P_DETECT	10
 #define AVA2_P_STATIC	11
@@ -28,11 +26,15 @@
 #define AVA2_P_COINBASE	13
 #define AVA2_P_MERKLES	14
 #define AVA2_P_HEADER	15
+#define AVA2_P_POLLING  16
+#define AVA2_P_DIFF	17
+#define AVA2_P_REQUIRE	18
+#define AVA2_P_SET	19
 
 #define AVA2_P_ACK		21
 #define AVA2_P_NAK		22
 #define AVA2_P_NONCE		23
-#define AVA2_P_HEARTBEAT	24
+#define AVA2_P_STATUS		24
 #define AVA2_P_ACKDETECT	25
 
 #endif	/* _PROTOCOL_H_ */

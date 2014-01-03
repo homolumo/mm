@@ -6,17 +6,12 @@
  * For details see the UNLICENSE file at the root of the source tree.
  */
 
-#include "intr.h"
-#include "system_config.h"
+#ifndef __SHIFTER_H__
+#define __SHIFTER_H__
 
-#include "uart.h"
+#include <stdint.h>
 
-void isr(void)
-{
-	unsigned int irqs;
+void set_voltage(uint32_t value);
+uint32_t get_voltage();
 
-	irqs = irq_pending() & irq_getmask();
-
-	if (irqs & IRQ_UART)
-		uart_isr();
-}
+#endif	/* __SHIFTER_H__ */

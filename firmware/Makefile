@@ -7,6 +7,11 @@
 # For details see the UNLICENSE file at the root of the source tree.
 #
 
+GIT_VERSION:=$(shell git rev-parse HEAD | cut -c 1-7)
+GIT_STATUS:=$(shell ([ -z "`git status -s -uno`" ] && echo 0) || echo +)
+
+CFLAGS += -DMM_VERSION='"201312-$(GIT_VERSION)$(GIT_STATUS)"'
+
 -include config.mk
 # ----- Customer ----------------------------------------------------------
 INCLUDES   = -I. -Isdk -Iminilibc
@@ -14,7 +19,7 @@ LDFLAGS    += -nostartfiles -nodefaultlibs -nostdlib -Wl,--gc-sections -Wl,-T,li
 LDLIBS     += -Bminilibc -lminilibc -lgcc
 
 SSRCS      = sdk/crt0ram.S sdk/intr.c
-CSRCS      = main.c uart.c sha256.c alink.c twipwm.c miner.c crc16.c sha2.c
+CSRCS      = main.c uart.c sha256.c alink.c twipwm.c miner.c crc16.c sha2.c shifter.c timer.c
 OBJS       := $(addsuffix .o,$(basename $(CSRCS) $(SSRCS)))
 
 BATCHFILE	:= $(shell mktemp)

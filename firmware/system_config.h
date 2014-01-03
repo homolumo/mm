@@ -9,7 +9,11 @@
 #ifndef _SYSTEM_CONFIG_H_
 #define _SYSTEM_CONFIG_H_
 
-#define CPU_FREQUENCY		(50 * 1000 * 1000) /* 50Mhz */
+#define ASIC_FREQUENCY	1500
+#define ASIC_COUNT	7
+
+
+#define CPU_FREQUENCY		(100 * 1000 * 1000) /* 50Mhz */
 #define UART_BAUD_RATE          (115200)
 
 /* Interrupt
@@ -30,6 +34,8 @@
 #define SHA256_BASE		(0x80000400)
 #define ALINK_BASE		(0x80000500)
 #define TWIPWM_BASE		(0x80000600)
+#define SHIFTER_BASE		(0x80000614)
+#define TIMER_BASE		(0x80000620)
 
 
 /* UART */
@@ -90,9 +96,9 @@ struct lm32_sha256 {
 /* ALINK */
 #define LM32_ALINK_STATE_TXFULL	(1 << 0)
 #define LM32_ALINK_STATE_FLUSH	(1 << 1)
-#define LM32_ALINK_STATE_TXCOUNT	(0x000000F0)
+#define LM32_ALINK_STATE_TXCOUNT	(0x00007FF0)
 #define LM32_ALINK_STATE_RXEMPTY	(1 << 16)
-#define LM32_ALINK_STATE_RXCOUNT (0x3FF00000)
+#define LM32_ALINK_STATE_RXCOUNT	(0x3FF00000)
 
 struct lm32_alink {
 	volatile unsigned int tx;
@@ -115,12 +121,26 @@ struct lm32_alink {
 #define LM32_TWIPWM_WDG_ENABLE	(1 << 0);
 /* [26:1] Feed Dog: 0x3~0x3ffffff;[WR] */
 
+#define LM32_TWI_REG_TEMP0	0x48
+#define LM32_TWI_REG_TEMP1	0x49
+
 struct lm32_twipwm {
 	volatile unsigned int cr; /* TWI ctrl register */
 	volatile unsigned int wd; /* TWI write byte */
 	volatile unsigned int rd; /* TWI read byte */
 	volatile unsigned int pwm; /* PWM Counter register */
 	volatile unsigned int wdg; /* Watch dog ctrl */
+	volatile unsigned int pad; /* Watch dog ctrl */
+	volatile unsigned int fan0; /* Watch dog ctrl */
+	volatile unsigned int fan1; /* Watch dog ctrl */
+};
+
+struct lm32_shifter {
+	volatile unsigned int reg; /* Shifter register for power chip */
+};
+
+struct lm32_timer {
+	volatile unsigned int reg; /* Timer register */
 };
 
 #endif /* _SYSTEM_CONFIG_H_ */

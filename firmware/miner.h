@@ -38,7 +38,7 @@ struct result {
 };
 
 struct mm_work {
-	uint8_t *jobid;
+	uint8_t job_id[4];
 
 	size_t coinbase_len;
 	uint8_t coinbase[AVA2_P_COINBASE_SIZE];
@@ -51,15 +51,16 @@ struct mm_work {
 	int nmerkles;
 	uint8_t merkles[AVA2_P_MERKLES_COUNT][32];
 
-	uint8_t difficulty; /* number of leading zeros bits required
-			     * (for a valid share) */
-	bool rollntime; /* whether rollntime is accepted */
-	bool clean;	/* flush all prior jobs (cut) */
-
 	uint8_t header[128];
+
+	uint32_t diff;
+	uint32_t pool_no;
 };
 
 void miner_init_work(struct mm_work *mw, struct work *work);
-void miner_gen_work(struct mm_work *mw, struct work *work);
+void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *work);
+
+void set_asic_freq(uint32_t value);
+uint32_t get_asic_freq();
 
 #endif /* __MINER_H__ */

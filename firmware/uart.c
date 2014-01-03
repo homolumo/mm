@@ -15,7 +15,7 @@
 #include "io.h"
 
 
-#define UART_RINGBUFFER_SIZE_RX 256
+#define UART_RINGBUFFER_SIZE_RX 1024
 #define UART_RINGBUFFER_MASK_RX (UART_RINGBUFFER_SIZE_RX-1)
 
 static char rx_buf[UART_RINGBUFFER_SIZE_RX];
@@ -26,13 +26,9 @@ static struct lm32_uart *uart = (struct lm32_uart *)UART0_BASE;
 
 void uart_isr(void)
 {
-	uint8_t stat = readb(&uart->iir);
-
-	if (stat & LM32_UART_STAT_RX_EVT) {
-		while (readb(&uart->lsr) & LM32_UART_LSR_DR) {
-			rx_buf[rx_produce] = readb(&uart->rxtx);
-			rx_produce = (rx_produce + 1) & UART_RINGBUFFER_MASK_RX;
-		}
+	while (readb(&uart->lsr) & LM32_UART_LSR_DR) {
+		rx_buf[rx_produce] = readb(&uart->rxtx);
+		rx_produce = (rx_produce + 1) & UART_RINGBUFFER_MASK_RX;
 	}
 
 	irq_ack(IRQ_UART);

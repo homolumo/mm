@@ -14,10 +14,14 @@ void alink_flush_fifo();
 void alink_buf_status();
 int alink_busy_status();
 int alink_txbuf_full();
+int alink_txbuf_count();
+int alink_rxbuf_count();
 int alink_send_work(struct work *w);
 int alink_rxbuf_empty();
 void alink_read_result(struct result *r);
 
+#ifdef DEBUG
 void send_test_work();
+#endif
 
 #endif	/* _ALINK_H_ */
